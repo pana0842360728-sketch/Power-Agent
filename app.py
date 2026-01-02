@@ -14,8 +14,8 @@ st.set_page_config(
 # --- 2. 安全与配置加载 ---
 # 尝试从 Secrets 获取密钥，如果没有配置，给出友好提示
 try:
-    GEMINI_API_KEY = st.secrets["AIzaSyAsVRCRvF_yra0_o2Jf_TtqDn6ZR2ZVr_8"]
-    TAVILY_API_KEY = st.secrets["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"]
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+    TAVILY_API_KEY = st.secrets["TAVILY_API_KEY"]
 except FileNotFoundError:
     st.error("🚨 严重错误：未检测到 API 密钥配置！")
     st.info("请在 Streamlit Cloud 的 App Settings -> Secrets 中配置 GEMINI_API_KEY 和 TAVILY_API_KEY。")
@@ -160,3 +160,4 @@ if analyze_btn and query:
                         with st.expander(f"来源：{r['title']}"):
                             st.info(f"URL: {r['url']}")
                             st.write(r['content'])
+
