@@ -47,7 +47,7 @@ def generate_report(prompt):
     """调用 Gemini 生成报告"""
     try:
         response = client.models.generate_content(
-            model='gemini-1.5-pro', # 使用 Pro 版本，逻辑更强
+            model='gemini-3-pro', # 使用 Pro 版本，逻辑更强
             contents=prompt
         )
         return response.text
@@ -160,4 +160,5 @@ if analyze_btn and query:
                         with st.expander(f"来源：{r['title']}"):
                             st.info(f"URL: {r['url']}")
                             st.write(r['content'])
+
 
