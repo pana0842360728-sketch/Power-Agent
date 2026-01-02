@@ -12,8 +12,8 @@ st.set_page_config(
 )
 
 # --- 2. 安全与配置加载 ---
-# 尝试从 Secrets 获取密钥，如果没有配置，给出友好提示
 try:
+    # 这里的写法是正确的，从 Secrets 读取，而不是直接写死 Key
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
     TAVILY_API_KEY = st.secrets["TAVILY_API_KEY"]
 except FileNotFoundError:
@@ -21,24 +21,24 @@ except FileNotFoundError:
     st.info("请在 Streamlit Cloud 的 App Settings -> Secrets 中配置 GEMINI_API_KEY 和 TAVILY_API_KEY。")
     st.stop()
 
-# 初始化 Gemini 客户端 (使用 Google 最新 v1 SDK)
+# 初始化 Gemini 客户端
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-# --- 3. 核心功能函数 (带缓存优化) ---
-@st.cache_data(show_spinner=False, ttl=3600)  # 缓存有效期 1 小时
+# --- 3. 核心功能函数 ---
+@st.cache_data(show_spinner=False, ttl=3600)
 def search_tavily(query):
-    """调用 Tavily 进行联网搜索，并缓存结果"""
+    """调用 Tavily 进行联网搜索"""
     url = "https://api.tavily.com/search"
     payload = {
         "api_key": TAVILY_API_KEY,
         "query": query,
-        "search_depth": "advanced", # 深度搜索模式
-        "max_results": 7,           # 获取更多来源以供筛选
-        "include_domains": []       # 可选：限制搜索特定域名
+        "search_depth": "advanced",
+        "max_results": 7,
+        "include_domains": []
     }
     try:
         response = requests.post(url, json=payload, timeout=15)
-        response.raise_for_status() # 检查 HTTP 错误
+        response.raise_for_status()
         return response.json()
     except Exception as e:
         return {"error": str(e)}
@@ -46,8 +46,10 @@ def search_tavily(query):
 def generate_report(prompt):
     """调用 Gemini 生成报告"""
     try:
+        # 【关键修改】这里改成了 flash 模型，解决了 404 问题
         response = client.models.generate_content(
-            model='gemini-1.5-flash''gemini-1.5-fa'l'sgemini-1.5-fa'l',ents=prompt
+            model='gemini-1.5-flash', 
+            contents=prompt
         )
         return response.text
     except Exception as e:
@@ -55,7 +57,7 @@ def generate_report(prompt):
 
 # --- 4. 界面布局设计 ---
 st.title("🛡️ 华为电力数字化军团 | 全球情报 Agent")
-st.markdown("`Powered by Gemini 1.5 Pro & Tavily Search`")
+st.markdown("`Powered by Gemini 1.5 Flash & Tavily Search`")
 st.divider()
 
 # 侧边栏
@@ -63,7 +65,7 @@ with st.sidebar:
     st.header("⚙️ 研判控制台")
     st.markdown("---")
     st.success("🟢 网络连接：全球直连")
-    st.success("🟢 AI 引擎：Gemini 1.5 Pro")
+    st.success("🟢 AI 引擎：Gemini 1.5 Flash") # 界面文字我也帮您同步改了
     st.info("📚 覆盖情报源：\n- IEEE / CIGRE / IEA\n- 彭博新能源财经 (BNEF)\n- 西门子/施耐德/GE 官网")
     
     st.markdown("---")
@@ -75,7 +77,7 @@ with col1:
     query = st.text_input("🔎 输入调研课题", placeholder="例如：沙特红海新城微电网项目的数字化架构分析")
 
 with col2:
-    st.write("") # 占位排版
+    st.write("")
     st.write("") 
     analyze_btn = st.button("🚀 生成顾问报告", type="primary", use_container_width=True)
 
@@ -84,7 +86,6 @@ if analyze_btn and query:
     if len(query) < 2:
         st.warning("请输入更具体的关键词。")
     else:
-        # 进度条容器
         status_box = st.status("正在启动全球情报侦察...", expanded=True)
         
         # [步骤 1] 联网搜索
@@ -141,7 +142,7 @@ if analyze_btn and query:
                 
                 status_box.update(label="✅ 研判报告已生成", state="complete", expanded=False)
                 
-                # [步骤 4] 结果展示 (使用 Tab 分页)
+                # [步骤 4] 结果展示
                 tab1, tab2 = st.tabs(["📝 深度研判报告", "🔗 原始情报来源"])
                 
                 with tab1:
@@ -159,6 +160,3 @@ if analyze_btn and query:
                         with st.expander(f"来源：{r['title']}"):
                             st.info(f"URL: {r['url']}")
                             st.write(r['content'])
-
-
-
